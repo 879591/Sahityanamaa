@@ -1,0 +1,8 @@
+{
+  "name": "साहित्यानामा | Sahityanamaa",
+  "description": "हिंदी साहित्य, कविता, कहानी, ग़ज़ल, शख्सियत, संस्कृति और विचारों का साहित्यिक मंच।",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

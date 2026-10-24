@@ -1,20 +1,38 @@
-# साहित्यानामा — Premium Website Concept
+# साहित्यानामा | Sahityanamaa — React Edition
 
-यह एक responsive static front-end concept है, जो साहित्यानामा के सार्वजनिक रूप से दिखाई देने वाले साहित्यिक विषयों और संपर्क विवरणों के आधार पर बनाया गया है।
+हिंदी साहित्य, कविता, कहानी, ग़ज़ल, शख्सियत, संस्कृति और विचारों का साहित्यिक मंच।
 
-## फ़ाइलें
-- `index.html` — वेबसाइट की संरचना और हिंदी सामग्री
-- `style.css` — प्रीमियम responsive design
-- `script.js` — मोबाइल मेन्यू, खोज, category filters, demo newsletter form
+यह एप्लिकेशन मूल स्थिर फ्रंट-एंड अवधारणा से एक आधुनिक, प्रतिक्रियाशील **React (TypeScript + Vite)** वेब अनुप्रयोग में पुनर्गठित (rewritten) किया गया है।
 
-## चलाने का तरीका
-1. ZIP extract करें।
-2. `index.html` को browser में खोलें, या सभी तीन फ़ाइलें एक ही folder में रखें।
-3. बेहतर testing/deployment के लिए folder को GitHub/Vercel/Netlify पर upload करें।
+## मुख्य विशेषताएँ (Core Features)
 
-## महत्वपूर्ण सीमाएँ
-- यह redesign/demo है; इससे मूल `sahityanama.com` वेबसाइट में कोई बदलाव नहीं होता।
-- लेखों के cards में links मूल वेबसाइट पर जाते हैं। यह पूर्ण CMS या मूल वेबसाइट का पूरा लेख-संग्रह नहीं है।
-- Newsletter form केवल front-end demo है; email save करने के लिए backend और consent/privacy workflow चाहिए।
-- Live website पर publish करने से पहले साइट-मालिक की अनुमति, logo/brand assets, content rights, current article links, privacy policy और contact details verify करें।
-- इस static version में login/admin panel, real article publishing, comments, database, analytics, RSS, sitemap generation या SEO server configuration शामिल नहीं हैं।
+- **प्रीमियम हिंदी टाइपोग्राफी और डिज़ाइन**:
+  - `Tiro Devanagari Hindi` और `DM Sans` के सुंदर संयोजन के साथ साहित्यिक अनुभव।
+  - गतिशील पुस्तक कला (3D Book Art) और सूक्ष्म परिभ्रमण एनिमेशन (Orbit animations)।
+  - साहित्यिक शैलियों का सतत टिकर (Marquee)।
+
+- **साहित्यिक श्रेणियाँ और रचनाएँ (8 विधाएँ)**:
+  - कहानियाँ, कविता और गीत, ग़ज़ल और शायरी, आलेख और विचार, इतिहास और धरोहर, शख्सियत, यात्रा-वृत्तांत, साहित्य समाचार।
+  - इंटरैक्टिव श्रेणी चिप्स और तत्काल खोज (Real-time Search Filter)।
+
+- **इन-ऐप वाचन मंच (Article Reader Modal)**:
+  - रचनाओं को आरामदायक रूप में पढ़ने के लिए पॉपअप रीडर।
+  - फ़ॉन्ट आकार समायोजन (A- / A / A+)।
+  - पसंदीदा रचनाओं को सहेजने (Bookmark / LocalStorage) की सुविधा।
+  - सोशल शेयरिंग और मूल वेबसाइट (`sahityanama.com`) लिंक।
+
+- **संपादकीय स्तंभ एवं धरोहर (Heritage & Editorial)**:
+  - "विचारों का कोना" (Thoughts & Essays)।
+  - इतिहास के विस्मृत नायक व स्वतंत्रता सेनानियों (उदा देवी पासी, कबीर आदि) का परिचय।
+  - ताज़ा साहित्यिक समाचार, विमोचन और सम्मान समारोह की जानकारी।
+
+- **साहित्यिक समाचार-पत्र (Newsletter) व प्रतिक्रिया (Toast)**:
+  - ईमेल सदस्यता फ़ॉर्म तथा सहज टोस्ट सूचना प्रणाली।
+
+## तकनीकी संरचना (Tech Stack)
+
+- **Framework**: React 18
+- **Language**: TypeScript
+- **Bundler & Dev Server**: Vite 6 (Port 3000, 0.0.0.0)
+- **Styling**: Pure CSS (साहित्यानामा की मूल विशिष्ट सौंदर्यता सुरक्षित)
+- **Persistence**: `localStorage` (सहेजी गई रचनाओं के लिए)
