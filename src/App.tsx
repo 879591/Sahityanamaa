@@ -1,239 +1,586 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { Hero } from './components/Hero';
-import { Ticker } from './components/Ticker';
-import { Featured } from './components/Featured';
-import { QuoteBand } from './components/QuoteBand';
-import { CategoryGrid } from './components/CategoryGrid';
-import { Thoughts } from './components/Thoughts';
-import { Heritage } from './components/Heritage';
-import { News } from './components/News';
-import { AllArticles } from './components/AllArticles';
-import { Newsletter } from './components/Newsletter';
+import { Navbar } from './components/Navbar';
+import { CinematicHero } from './components/CinematicHero';
+import { ReaderView } from './components/ReaderView';
+import { AuthorModal } from './components/AuthorModal';
+import { SearchModal } from './components/SearchModal';
+import { AudioPlayerDrawer } from './components/AudioPlayerDrawer';
+import { UserDashboardModal } from './components/UserDashboardModal';
+import { AdminDashboard } from './components/AdminDashboard';
+import { SubmissionModal } from './components/SubmissionModal';
 import { Footer } from './components/Footer';
-import { ArticleModal } from './components/ArticleModal';
-import { SavedModal } from './components/SavedModal';
-import { Toast } from './components/Toast';
+
+// Section Components
+import { FeaturedLiterature } from './components/sections/FeaturedLiterature';
+import { StoriesSection } from './components/sections/StoriesSection';
+import { PoetrySection } from './components/sections/PoetrySection';
+import { GhazalsSection } from './components/sections/GhazalsSection';
+import { NovelsSection } from './components/sections/NovelsSection';
+import { ArticlesSection } from './components/sections/ArticlesSection';
+import { AuthorsSection } from './components/sections/AuthorsSection';
+import { HeritageAndIndianLitSection } from './components/sections/HeritageAndIndianLitSection';
+import { MediaAndEventsSection } from './components/sections/MediaAndEventsSection';
+import { AboutAndContactSection } from './components/sections/AboutAndContactSection';
+
 import {
   ARTICLES_DATA,
-  EDITORIAL_STORIES,
-  HERITAGE_LIST,
-  NEWS_LIST,
-} from './data/articles';
-import { ArticleItem, CategoryType } from './types';
+  AUTHORS_DATA,
+  BOOKS_DATA,
+  AUDIO_TRACKS,
+  VIDEO_GALLERY,
+  LITERARY_EVENTS,
+  WRITING_COMPETITIONS,
+  SPECIAL_EDITIONS,
+  INITIAL_COMMENTS,
+} from './data/literaryData';
+import {
+  ArticleItem,
+  AuthorItem,
+  BookItem,
+  SubmissionItem,
+  CommentItem,
+  UserProfile,
+  SectionView,
+} from './types';
 
 export const App: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
-  const [activeArticle, setActiveArticle] = useState<ArticleItem | null>(null);
-  const [savedArticleIds, setSavedArticleIds] = useState<string[]>(() => {
+  // Navigation & View State
+  const [currentView, setCurrentView] = useState<SectionView>('home');
+  const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
+  const [activeAuthorId, setActiveAuthorId] = useState<string | null>(null);
+
+  // Modals & Panels
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAudioPlayerOpen, setIsAudioPlayerOpen] = useState(false);
+  const [currentAudioTrackIndex, setCurrentAudioTrackIndex] = useState(0);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isUserDashboardOpen, setIsUserDashboardOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
+
+  // Dual Theme (Dark / Light Mode)
+  const [isDark, setIsDark] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem('sahityanama_saved');
-      return stored ? JSON.parse(stored) : [];
+      const stored = localStorage.getItem('sahityanama_theme');
+      if (stored) return stored === 'dark';
+      return true; // Default to dark for cinematic Awwwards aesthetic
     } catch {
-      return [];
+      return true;
     }
   });
-  const [savedModalOpen, setSavedModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Sync saved to localStorage
-  useEffect(() => {
+  // Data Store with State
+  const [articles, setArticles] = useState<ArticleItem[]>(ARTICLES_DATA);
+  const [authors, setAuthors] = useState<AuthorItem[]>(AUTHORS_DATA);
+  const [books] = useState<BookItem[]>(BOOKS_DATA);
+  const [comments, setComments] = useState<CommentItem[]>(INITIAL_COMMENTS);
+  const [submissions, setSubmissions] = useState<SubmissionItem[]>([
+    {
+      id: 'sub-init-1',
+      authorName: 'आरण्या शुक्ला',
+      email: 'aranya@example.com',
+      title: 'काँच का परिंदा और नगर का शोर',
+      category: 'कविता',
+      genre: 'समकालीन',
+      content: 'रात की आखिरी मेट्रो जब स्टेशन छोड़ती है, एक काँच का परिंदा पटरियों पर अपने पंख फड़फड़ाता है...',
+      bio: 'युवा कवयित्री, लखनऊ',
+      status: 'approved',
+      submittedAt: '3 दिन पूर्व',
+      feedback: 'उत्कृष्ट बिंब और गहरी मानवीय संवेदना।',
+    },
+    {
+      id: 'sub-init-2',
+      authorName: 'विकास रंजन',
+      email: 'vikas@example.com',
+      title: 'धूप का आखिरी सिरा',
+      category: 'कहानी',
+      genre: 'यथार्थवाद',
+      content: 'बाबूजी की पुरानी साइकिल की घंटी जब बजती, तो लगता जैसे बचपन अभी-अभी मोड़ से गुजरा हो...',
+      bio: 'कथाकार, पटना',
+      status: 'pending',
+      submittedAt: 'कल',
+    },
+  ]);
+
+  // Bookmarks
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
     try {
-      localStorage.setItem(
-        'sahityanama_saved',
-        JSON.stringify(savedArticleIds)
-      );
+      const stored = localStorage.getItem('sahityanama_bookmarks');
+      return stored ? JSON.parse(stored) : ['rashmirathi-dinkar', 'eidgah-premchand'];
+    } catch {
+      return ['rashmirathi-dinkar', 'eidgah-premchand'];
+    }
+  });
+
+  // User Profile
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    id: 'user-guest-1',
+    name: 'साहित्य साधक',
+    email: 'reader@sahityanama.in',
+    role: 'reader',
+    bookmarks: bookmarkedIds,
+    history: [
+      { articleId: 'rashmirathi-dinkar', readAt: 'आज', progress: 100 },
+      { articleId: 'eidgah-premchand', readAt: 'कल', progress: 75 },
+    ],
+    preferences: {
+      fontSize: 'base',
+      theme: 'paper',
+      fontFamily: 'devanagari',
+    },
+  });
+
+  // Synchronize Dark Theme class on <html>
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('sahityanama_theme', isDark ? 'dark' : 'light');
     } catch {
       // ignore
     }
-  }, [savedArticleIds]);
+  }, [isDark]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3200);
-  };
+  // Synchronize Bookmarks
+  useEffect(() => {
+    try {
+      localStorage.setItem('sahityanama_bookmarks', JSON.stringify(bookmarkedIds));
+    } catch {
+      // ignore
+    }
+  }, [bookmarkedIds]);
 
-  const handleToggleSave = (id: string) => {
-    setSavedArticleIds((prev) =>
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleToggleBookmark = (id: string) => {
+    setBookmarkedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  const handleOpenArticle = (id: string) => {
-    // Check main articles
-    const mainArt = ARTICLES_DATA.find((a) => a.id === id);
-    if (mainArt) {
-      setActiveArticle(mainArt);
-      return;
-    }
-
-    // Check editorial
-    const editStory = EDITORIAL_STORIES.find((e) => e.id === id);
-    if (editStory) {
-      setActiveArticle({
-        id: editStory.id,
-        title: editStory.title,
-        category: editStory.category as CategoryType,
-        subCategory: editStory.tag,
-        excerpt: editStory.excerpt,
-        content: editStory.content,
-        author: 'संपादकीय मंडल',
-        readTime: '4 मिनट',
-        originalUrl: editStory.originalUrl,
-      });
-      return;
-    }
-
-    // Check heritage
-    const heritage = HERITAGE_LIST.find((h) => h.id === id);
-    if (heritage) {
-      setActiveArticle({
-        id: heritage.id,
-        title: heritage.title,
-        category: 'धरोहर',
-        subCategory: heritage.role,
-        excerpt: heritage.subtitle,
-        content: heritage.content,
-        author: 'इतिहास शोध प्रकोष्ठ',
-        readTime: '3 मिनट',
-        originalUrl: heritage.originalUrl,
-      });
-      return;
-    }
-
-    // Check news
-    const news = NEWS_LIST.find((n) => n.id === id);
-    if (news) {
-      setActiveArticle({
-        id: news.id,
-        title: news.title,
-        category: 'समाचार',
-        subCategory: `${news.day} ${news.month} · ${news.tag}`,
-        excerpt: news.excerpt,
-        content: news.content,
-        author: 'साहित्य संवाद',
-        date: `${news.day} ${news.month} 2024`,
-        readTime: '3 मिनट',
-        originalUrl: news.originalUrl,
-      });
-    }
+  const handleAddComment = (articleId: string, content: string, name: string) => {
+    const newComment: CommentItem = {
+      id: `comm-${Date.now()}`,
+      articleId,
+      userName: name,
+      content,
+      timestamp: 'अभी-अभी',
+      likes: 1,
+    };
+    setComments((prev) => [newComment, ...prev]);
   };
 
-  const handleScrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+  const handleCreateSubmission = (
+    subData: Omit<SubmissionItem, 'id' | 'status' | 'submittedAt'>
+  ) => {
+    const newSub: SubmissionItem = {
+      ...subData,
+      id: `sub-${Date.now()}`,
+      status: 'pending',
+      submittedAt: 'अभी-अभी',
+    };
+    setSubmissions((prev) => [newSub, ...prev]);
   };
 
-  const savedArticlesList: ArticleItem[] = savedArticleIds
-    .map((id) => {
-      const art = ARTICLES_DATA.find((a) => a.id === id);
-      if (art) return art;
-      const edit = EDITORIAL_STORIES.find((e) => e.id === id);
-      if (edit) {
-        return {
-          id: edit.id,
-          title: edit.title,
-          category: edit.category as CategoryType,
-          excerpt: edit.excerpt,
-          content: edit.content,
-          originalUrl: edit.originalUrl,
-        };
-      }
-      return null;
-    })
-    .filter((a): a is ArticleItem => a !== null);
+  const handleApproveSubmission = (id: string) => {
+    const sub = submissions.find((s) => s.id === id);
+    if (!sub) return;
+
+    // Update submission status
+    setSubmissions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: 'approved' } : s))
+    );
+
+    // Publish into live articles!
+    const newArticle: ArticleItem = {
+      id: `art-sub-${Date.now()}`,
+      title: sub.title,
+      category: sub.category,
+      genre: sub.genre || 'समकालीन',
+      author: sub.authorName,
+      authorId: 'premchand',
+      date: '2026',
+      readTime: '4 मिनट',
+      excerpt: sub.content.slice(0, 120) + '...',
+      content: sub.content,
+      featured: true,
+      views: 1,
+      likes: 1,
+    };
+    setArticles((prev) => [newArticle, ...prev]);
+  };
+
+  const handleRejectSubmission = (id: string, reason: string) => {
+    setSubmissions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: 'rejected', feedback: reason } : s))
+    );
+  };
+
+  const handleDeleteArticle = (id: string) => {
+    setArticles((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handleDeleteComment = (id: string) => {
+    setComments((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const handleSelectAudioTrack = (index: number) => {
+    setCurrentAudioTrackIndex(index);
+    setIsPlayingAudio(true);
+    setIsAudioPlayerOpen(true);
+  };
+
+  // Find active article & author
+  const activeArticle = articles.find((a) => a.id === activeArticleId) || null;
+  const activeAuthor = authors.find((au) => au.id === activeAuthorId) || null;
+  const activeAuthorArticles = activeAuthor
+    ? articles.filter((a) => a.author.includes(activeAuthor.name) || a.authorId === activeAuthor.id)
+    : [];
+
+  const bookmarkedArticlesList = articles.filter((a) => bookmarkedIds.includes(a.id));
+  const userSubmissionsList = submissions;
 
   return (
-    <div className="sahityanama-app">
-      <Header
-        onSearch={(q) => setSearchQuery(q)}
-        searchQuery={searchQuery}
-        onSelectCategory={(cat) => setSelectedCategory(cat)}
-        savedCount={savedArticleIds.length}
-        onOpenSavedModal={() => setSavedModalOpen(true)}
+    <div className="min-h-screen flex flex-col bg-[#FBF9F4] dark:bg-[#090D16] text-[#1A1321] dark:text-[#E8E2D8] transition-colors duration-300">
+      
+      {/* Primary Top Bar */}
+      <Navbar
+        currentView={currentView}
+        onNavigate={(v) => {
+          setCurrentView(v);
+          setActiveArticleId(null);
+        }}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onToggleAudio={() => {
+          setIsAudioPlayerOpen(!isAudioPlayerOpen);
+          if (!isAudioPlayerOpen) setIsPlayingAudio(true);
+        }}
+        isPlayingAudio={isPlayingAudio && isAudioPlayerOpen}
+        onOpenUserDashboard={() => setIsUserDashboardOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        isAdmin={isAdminAuthenticated}
+        isDark={isDark}
+        onToggleTheme={() => setIsDark(!isDark)}
+        onOpenSubmit={() => setIsSubmissionModalOpen(true)}
       />
 
-      <main>
-        <Hero
-          onExploreClick={() => handleScrollTo('latest')}
-          onAboutClick={() => handleScrollTo('thoughts')}
-        />
+      {/* Main Content Area */}
+      <main className="flex-1">
+        
+        {/* Full-screen Literature Reader View */}
+        {activeArticle ? (
+          <ReaderView
+            article={activeArticle}
+            author={authors.find((a) => a.id === activeArticle.authorId || a.name === activeArticle.author)}
+            allArticles={articles}
+            isBookmarked={bookmarkedIds.includes(activeArticle.id)}
+            onToggleBookmark={handleToggleBookmark}
+            onClose={() => setActiveArticleId(null)}
+            onSelectArticle={(id) => setActiveArticleId(id)}
+            onOpenAuthor={(id) => setActiveAuthorId(id)}
+            comments={comments.filter((c) => c.articleId === activeArticle.id)}
+            onAddComment={handleAddComment}
+          />
+        ) : (
+          <>
+            {/* VIEW 1: Full Cinematic Home Page */}
+            {currentView === 'home' && (
+              <>
+                <CinematicHero
+                  onNavigate={setCurrentView}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                  onOpenAuthor={(id) => setActiveAuthorId(id)}
+                  onOpenSubmit={() => setIsSubmissionModalOpen(true)}
+                />
 
-        <Ticker />
+                <FeaturedLiterature
+                  articles={articles}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                  onOpenAuthor={(id) => setActiveAuthorId(id)}
+                  onNavigateSection={setCurrentView}
+                />
 
-        <Featured
-          onOpenArticle={handleOpenArticle}
-          onViewAllClick={() => handleScrollTo('all-articles')}
-        />
+                <StoriesSection
+                  articles={articles}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                  onOpenAuthor={(id) => setActiveAuthorId(id)}
+                />
 
-        <QuoteBand />
+                <PoetrySection
+                  articles={articles}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                  onOpenAuthor={(id) => setActiveAuthorId(id)}
+                />
 
-        <CategoryGrid
-          onSelectCategory={(cat) => setSelectedCategory(cat)}
-        />
+                <GhazalsSection
+                  articles={articles}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                  onOpenAuthor={(id) => setActiveAuthorId(id)}
+                />
 
-        <Thoughts
-          onOpenEditorialStory={handleOpenArticle}
-          onExploreThoughts={() => {
-            setSelectedCategory('आलेख');
-            handleScrollTo('all-articles');
-          }}
-        />
+                <NovelsSection
+                  books={books}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                />
 
-        <Heritage onOpenHeritageItem={handleOpenArticle} />
+                <ArticlesSection
+                  articles={articles}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                />
 
-        <News
-          onOpenNewsItem={handleOpenArticle}
-          onViewAllNews={() => {
-            setSelectedCategory('समाचार');
-            handleScrollTo('all-articles');
-          }}
-        />
+                <AuthorsSection
+                  authors={authors}
+                  onOpenAuthor={(id) => setActiveAuthorId(id)}
+                />
 
-        <AllArticles
-          articles={ARTICLES_DATA}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => setSelectedCategory(cat)}
-          searchQuery={searchQuery}
-          onClearSearch={() => setSearchQuery('')}
-          onOpenArticle={handleOpenArticle}
-          savedIds={savedArticleIds}
-        />
+                <HeritageAndIndianLitSection
+                  articles={articles}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                />
 
-        <Newsletter
-          onSubscribe={(_email) => {
-            showToast('सदस्यता सफल! साहित्यानामा से जुड़ने के लिए धन्यवाद।');
-          }}
-        />
+                <MediaAndEventsSection
+                  audioTracks={AUDIO_TRACKS}
+                  videos={VIDEO_GALLERY}
+                  events={LITERARY_EVENTS}
+                  competitions={WRITING_COMPETITIONS}
+                  specialEditions={SPECIAL_EDITIONS}
+                  onSelectAudioTrack={handleSelectAudioTrack}
+                  onOpenSubmit={() => setIsSubmissionModalOpen(true)}
+                  onOpenArticle={(id) => setActiveArticleId(id)}
+                />
+
+                <AboutAndContactSection />
+              </>
+            )}
+
+            {/* VIEW 2: Featured Literature Dedicated */}
+            {currentView === 'featured' && (
+              <FeaturedLiterature
+                articles={articles}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+                onOpenAuthor={(id) => setActiveAuthorId(id)}
+                onNavigateSection={setCurrentView}
+              />
+            )}
+
+            {/* VIEW 3: Hindi Stories Dedicated */}
+            {currentView === 'stories' && (
+              <StoriesSection
+                articles={articles}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+                onOpenAuthor={(id) => setActiveAuthorId(id)}
+              />
+            )}
+
+            {/* VIEW 4: Poetry Collection Dedicated */}
+            {currentView === 'poetry' && (
+              <PoetrySection
+                articles={articles}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+                onOpenAuthor={(id) => setActiveAuthorId(id)}
+              />
+            )}
+
+            {/* VIEW 5: Ghazals & Shayari Dedicated */}
+            {currentView === 'ghazals' && (
+              <GhazalsSection
+                articles={articles}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+                onOpenAuthor={(id) => setActiveAuthorId(id)}
+              />
+            )}
+
+            {/* VIEW 6: Novels & Books Dedicated */}
+            {currentView === 'novels' && (
+              <NovelsSection
+                books={books}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+              />
+            )}
+
+            {/* VIEW 7: Literary Articles Dedicated */}
+            {currentView === 'articles' && (
+              <ArticlesSection
+                articles={articles}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+              />
+            )}
+
+            {/* VIEW 8: Famous Authors Dedicated */}
+            {currentView === 'authors' && (
+              <AuthorsSection
+                authors={authors}
+                onOpenAuthor={(id) => setActiveAuthorId(id)}
+                filterMode="famous"
+              />
+            )}
+
+            {/* VIEW 9: Emerging Writers Dedicated */}
+            {currentView === 'emerging' && (
+              <AuthorsSection
+                authors={authors}
+                onOpenAuthor={(id) => setActiveAuthorId(id)}
+                filterMode="emerging"
+              />
+            )}
+
+            {/* VIEW 10: Cultural Heritage & Indian Lit */}
+            {(currentView === 'heritage' || currentView === 'indian-lit') && (
+              <HeritageAndIndianLitSection
+                articles={articles}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+              />
+            )}
+
+            {/* VIEW 11: Audio, Video, Events, Competitions, Special Editions, News */}
+            {(currentView === 'audio' ||
+              currentView === 'videos' ||
+              currentView === 'events' ||
+              currentView === 'competitions' ||
+              currentView === 'special-editions' ||
+              currentView === 'news') && (
+              <MediaAndEventsSection
+                audioTracks={AUDIO_TRACKS}
+                videos={VIDEO_GALLERY}
+                events={LITERARY_EVENTS}
+                competitions={WRITING_COMPETITIONS}
+                specialEditions={SPECIAL_EDITIONS}
+                onSelectAudioTrack={handleSelectAudioTrack}
+                onOpenSubmit={() => setIsSubmissionModalOpen(true)}
+                onOpenArticle={(id) => setActiveArticleId(id)}
+              />
+            )}
+
+            {/* VIEW 12: About & Contact */}
+            {(currentView === 'about' || currentView === 'contact') && (
+              <AboutAndContactSection />
+            )}
+
+            {/* VIEW 13: Submit Dedicated */}
+            {currentView === 'submit' && (
+              <div className="py-16 text-center max-w-2xl mx-auto px-4 font-devanagari">
+                <h2 className="font-editorial text-4xl font-bold mb-4">रचना प्रेषण पोर्टल</h2>
+                <p className="text-stone-600 dark:text-stone-300 mb-8">
+                  साहित्यानामा पर अपनी कविता, कहानी या आलेख भेजें।
+                </p>
+                <button
+                  onClick={() => setIsSubmissionModalOpen(true)}
+                  className="px-8 py-3.5 bg-[#6E1A2D] text-white rounded-xl font-sans-ui font-semibold shadow-lg cursor-pointer"
+                >
+                  रचना प्रेषण फॉर्म खोलें
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
       </main>
 
+      {/* Footer */}
       <Footer
-        onSelectCategory={(cat) => setSelectedCategory(cat)}
-        onNavigateSection={handleScrollTo}
+        onNavigate={(v) => {
+          setCurrentView(v);
+          setActiveArticleId(null);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenSubmit={() => setIsSubmissionModalOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
-      <ArticleModal
-        article={activeArticle}
-        onClose={() => setActiveArticle(null)}
-        isSaved={activeArticle ? savedArticleIds.includes(activeArticle.id) : false}
-        onToggleSave={handleToggleSave}
-        onShowToast={showToast}
+      {/* Floating Audio Player Drawer */}
+      <AudioPlayerDrawer
+        isOpen={isAudioPlayerOpen}
+        onClose={() => setIsAudioPlayerOpen(false)}
+        tracks={AUDIO_TRACKS}
+        currentTrackIndex={currentAudioTrackIndex}
+        onSelectTrack={(idx) => {
+          setCurrentAudioTrackIndex(idx);
+          setIsPlayingAudio(true);
+        }}
+        isPlaying={isPlayingAudio}
+        onTogglePlay={() => setIsPlayingAudio(!isPlayingAudio)}
       />
 
-      <SavedModal
-        isOpen={savedModalOpen}
-        onClose={() => setSavedModalOpen(false)}
-        savedArticles={savedArticlesList}
-        onOpenArticle={handleOpenArticle}
-        onRemoveSave={handleToggleSave}
+      {/* Modals */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        articles={articles}
+        authors={authors}
+        books={books}
+        onSelectArticle={(id) => {
+          setActiveArticleId(id);
+          setIsSearchOpen(false);
+        }}
+        onSelectAuthor={(id) => {
+          setActiveAuthorId(id);
+          setIsSearchOpen(false);
+        }}
       />
 
-      <Toast message={toastMessage} />
+      <AuthorModal
+        author={activeAuthor}
+        authorArticles={activeAuthorArticles}
+        onClose={() => setActiveAuthorId(null)}
+        onSelectArticle={(id) => setActiveArticleId(id)}
+      />
+
+      <UserDashboardModal
+        isOpen={isUserDashboardOpen}
+        onClose={() => setIsUserDashboardOpen(false)}
+        userProfile={userProfile}
+        bookmarkedArticles={bookmarkedArticlesList}
+        userSubmissions={userSubmissionsList}
+        onRemoveBookmark={handleToggleBookmark}
+        onSelectArticle={(id) => {
+          setActiveArticleId(id);
+          setIsUserDashboardOpen(false);
+        }}
+        onOpenSubmit={() => {
+          setIsUserDashboardOpen(false);
+          setIsSubmissionModalOpen(true);
+        }}
+        onUpdateProfile={(name, email) => {
+          setUserProfile((prev) => ({ ...prev, name, email }));
+        }}
+      />
+
+      <AdminDashboard
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        articles={articles}
+        authors={authors}
+        submissions={submissions}
+        comments={comments}
+        onAddArticle={(art) => setArticles((prev) => [art, ...prev])}
+        onDeleteArticle={handleDeleteArticle}
+        onApproveSubmission={handleApproveSubmission}
+        onRejectSubmission={handleRejectSubmission}
+        onDeleteComment={handleDeleteComment}
+        isAdminAuthenticated={isAdminAuthenticated}
+        onAuthenticate={setIsAdminAuthenticated}
+      />
+
+      <SubmissionModal
+        isOpen={isSubmissionModalOpen}
+        onClose={() => setIsSubmissionModalOpen(false)}
+        onSubmit={handleCreateSubmission}
+      />
+
     </div>
   );
 };
